@@ -28,7 +28,7 @@ class SVMModel(object):
 
         # Use TF-IDF features.
         logging.info("Building sentences tfidf features...")
-        tfidf = TfidfVectorizer(ngram_range=(1, 1))
+        tfidf = TfidfVectorizer(ngram_range=(1, 3))
         self.x_train = tfidf.fit_transform(self.x_train)
         self.x_test = tfidf.transform(self.x_test)
         self.x_valid = tfidf.transform(self.x_valid)
