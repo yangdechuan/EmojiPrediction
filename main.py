@@ -2,6 +2,7 @@ import os
 import logging
 
 from src.train import svm
+from src.train import lstm
 
 def config_log():
     """Config logging."""
@@ -21,7 +22,8 @@ def config_log():
 
 def main():
     config_log()
-    svm()
+    lstm()
+    # svm()
 
 
 if __name__ == "__main__":
