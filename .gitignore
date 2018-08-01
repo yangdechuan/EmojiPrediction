@@ -106,4 +106,4 @@ venv.bak/
 # pycharm
 .idea
 
-#.w2v
+*.w2v
