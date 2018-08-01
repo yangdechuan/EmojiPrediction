@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import time
 
@@ -8,9 +9,17 @@ import tensorflow as tf
 from tensorflow import keras
 
 from src.util.emoji_dataset import EmojiDataset
+from src.util.util import ClassificationMacroF1
 
 class LSTMModel(object):
-    def __init__(self):
+    def __init__(self, mode="basic"):
+        """LSTM model.
+
+        Arguments:
+            mode: one of `basic`, `two-layers`, `bi-dir`
+        """
+        self.mode = mode
+
         self.vocab_size = 10000
         self.embedding_dim = 300
         self.maxlen = 20
@@ -65,7 +74,17 @@ class LSTMModel(object):
                                                  trainable=False)
 
         model.add(embedding_layer)
-        model.add(keras.layers.LSTM(self.lstm_output_size, return_sequences=False))
+        if self.mode == "basic":
+            model.add(keras.layers.LSTM(self.lstm_output_size, return_sequences=False))
+        elif self.mode == "two-layers":
+            model.add(keras.layers.LSTM(self.lstm_output_size, return_sequences=True))
+            model.add(keras.layers.LSTM(self.lstm_output_size, return_sequences=False))
+        elif self.mode == "bi-dir":
+            model.add(keras.layers.Bidirectional(keras.layers.LSTM(self.lstm_output_size), merge_mode="sum"))
+        else:
+            logging.error("Error lstm mode!!")
+            sys.exit()
+
         model.add(keras.layers.Dense(self.num_classes))
         model.add(keras.layers.Activation("softmax"))
 
@@ -80,14 +99,17 @@ class LSTMModel(object):
     def train_model(self):
         """Train the model."""
         logging.info("Starting training...")
+
         early_stop = keras.callbacks.EarlyStopping(monitor="val_loss", patience=2)
+        macro_f1 = ClassificationMacroF1()
+
         start = time.time()
         self.model.fit(x=self.x_train, y=self.y_train,
                        batch_size=64,
                        epochs=10,
                        verbose=2,
-                       callbacks=[early_stop],
-                       validation_data=(self.x_valid, self.y_valid),
+                       callbacks=[early_stop, macro_f1],
+                       validation_data=(self.x_test, self.y_test),
                        )
         stop = time.time()
         logging.info("Finish training.\n")
