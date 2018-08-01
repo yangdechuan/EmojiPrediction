@@ -67,7 +67,7 @@ class LSTMModel(object):
         model.add(embedding_layer)
         model.add(keras.layers.LSTM(self.lstm_output_size, return_sequences=False))
         model.add(keras.layers.Dense(self.num_classes))
-        model.add(keras.layers.Activation("softmax"))
+        model.add(keras.layers.Activatgion("softmax"))
 
         optimizer = tf.train.AdamOptimizer(0.001)
         model.compile(optimizer,
