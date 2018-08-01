@@ -55,6 +55,8 @@ class EmojiDataset(object):
         tokenizer = Tokenizer(num_words=num_words)
         tokenizer.fit_on_texts(train_texts)
 
+        self.word_index = tokenizer.word_index
+
         train_data = tokenizer.texts_to_sequences(train_texts)
         test_data = tokenizer.texts_to_sequences(test_texts)
         valid_data = tokenizer.texts_to_sequences(valid_texts)
@@ -88,6 +90,9 @@ class EmojiDataset(object):
         return (np.array(self.train_data), np.array(self.train_labels)), \
                (np.array(self.test_data), np.array(self.test_labels)), \
                (np.array(self.valid_data), np.array(self.valid_labels))
+
+    def get_wordindex(self):
+        return self.word_index
 
 
 
