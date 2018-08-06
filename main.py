@@ -27,7 +27,7 @@ def main():
 
     # parse command line
     parser = argparse.ArgumentParser("Choose lstm mode.")
-    parser.add_argument("mode", type=str, choices=["basic", "two-layers", "bi-dir"], help="mode of lstm model")
+    parser.add_argument("mode", type=str, default="basic", choices=["basic", "two-layers", "bi-dir"], help="mode of lstm model")
     args = parser.parse_args()
 
     # train model

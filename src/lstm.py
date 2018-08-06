@@ -5,8 +5,9 @@ import time
 
 import numpy as np
 import gensim
-import tensorflow as tf
-from tensorflow import keras
+# import tensorflow as tf
+# from tensorflow import keras
+import keras
 
 from src.util.emoji_dataset import EmojiDataset
 from src.util.util import ClassificationMacroF1
@@ -91,8 +92,8 @@ class LSTMModel(object):
         model.add(keras.layers.Dense(self.num_classes))
         model.add(keras.layers.Activation("softmax"))
 
-        optimizer = tf.train.AdamOptimizer(0.001)
-        model.compile(optimizer,
+        # optimizer = tf.train.AdamOptimizer(0.001)
+        model.compile(optimizer="adam",
                       loss="categorical_crossentropy",
                       metrics=["accuracy"])
 
