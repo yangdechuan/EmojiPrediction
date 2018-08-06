@@ -8,8 +8,8 @@ def svm():
     model.train_model()
     model.test_model()
 
-def lstm():
-    model = LSTMModel(mode="two-layers")
+def lstm(mode=None):
+    model = LSTMModel(mode=mode)
     model.load_data()
     model.build_model()
     model.train_model()

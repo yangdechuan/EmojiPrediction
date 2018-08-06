@@ -1,4 +1,5 @@
 import os
+import argparse
 import logging
 
 from src.train import svm
@@ -21,8 +22,16 @@ def config_log():
 
 
 def main():
+    # config log
     config_log()
-    lstm()
+
+    # parse command line
+    parser = argparse.ArgumentParser("Choose lstm mode.")
+    parser.add_argument("mode", type=str, choices=["basic", "two-layers", "bi-dir"], help="mode of lstm model")
+    args = parser.parse_args()
+
+    # train model
+    lstm(mode=args.mode)
     # svm()
 
 

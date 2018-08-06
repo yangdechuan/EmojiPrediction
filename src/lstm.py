@@ -66,21 +66,24 @@ class LSTMModel(object):
         logging.info("Building model...")
         model = keras.Sequential()
 
+        # init with pretrained word embedding
         embedding_layer = keras.layers.Embedding(self.vocab_size + 1,  # due to mask_zero
                                                  self.embedding_dim,
                                                  input_length=20,
                                                  embeddings_initializer=keras.initializers.Constant(self.emb_matrix),
                                                  # mask_zero=False,
-                                                 trainable=False)
+                                                 trainable=True)
 
         model.add(embedding_layer)
         if self.mode == "basic":
-            model.add(keras.layers.LSTM(self.lstm_output_size, return_sequences=False))
+            model.add(keras.layers.LSTM(self.lstm_output_size, return_sequences=False, bias_initializer=keras.initializers.Ones()))
         elif self.mode == "two-layers":
-            model.add(keras.layers.LSTM(self.lstm_output_size, return_sequences=True))
-            model.add(keras.layers.LSTM(self.lstm_output_size, return_sequences=False))
+            model.add(keras.layers.LSTM(self.lstm_output_size, return_sequences=True, bias_initializer=keras.initializers.Ones()))
+            model.add(keras.layers.LSTM(self.lstm_output_size, return_sequences=False, bias_initializer=keras.initializers.Ones()))
         elif self.mode == "bi-dir":
-            model.add(keras.layers.Bidirectional(keras.layers.LSTM(self.lstm_output_size), merge_mode="sum"))
+            model.add(keras.layers.Bidirectional(
+                keras.layers.LSTM(self.lstm_output_size, bias_initializer=keras.initializers.Ones()),merge_mode="sum")
+            )
         else:
             logging.error("Error lstm mode!!")
             sys.exit()
@@ -108,7 +111,7 @@ class LSTMModel(object):
                        batch_size=64,
                        epochs=10,
                        verbose=2,
-                       callbacks=[early_stop, macro_f1],
+                       callbacks=[macro_f1],
                        validation_data=(self.x_test, self.y_test),
                        )
         stop = time.time()
