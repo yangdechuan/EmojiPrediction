@@ -16,5 +16,7 @@ datasets:
 - valid set: 50,000
 - test  set: 50,000
 ```
-python main.py
+# optional args: 
+# basic-lstm, two-lstm, bi-lstm, svm
+python main.py basic-lstm
 ```
