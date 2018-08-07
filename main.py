@@ -27,12 +27,15 @@ def main():
 
     # parse command line
     parser = argparse.ArgumentParser("Choose lstm mode.")
-    parser.add_argument("mode", type=str, default="basic", choices=["basic", "two-layers", "bi-dir"], help="mode of lstm model")
+    parser.add_argument("mode", type=str, default="basic", choices=["basic-lstm", "two-lstm", "bi-lstm", "svm"], help="mode of model")
     args = parser.parse_args()
+    mode = args.mode
 
     # train model
-    lstm(mode=args.mode)
-    # svm()
+    if mode == "svm":
+        svm()
+    else:
+        lstm(mode=mode)
 
 
 if __name__ == "__main__":
