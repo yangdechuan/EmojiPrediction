@@ -13,11 +13,11 @@ from src.util.emoji_dataset import EmojiDataset
 from src.util.util import ClassificationMacroF1
 
 class LSTMModel(object):
-    def __init__(self, mode="basic"):
+    def __init__(self, mode="basic-lstm"):
         """LSTM model.
 
         Arguments:
-            mode: one of `basic`, `two-layers`, `bi-dir`
+            mode: one of `basic-lstm`, `two-lstm`, `bi-lstm`
         """
         self.mode = mode
 
@@ -76,12 +76,12 @@ class LSTMModel(object):
                                                  trainable=True)
 
         model.add(embedding_layer)
-        if self.mode == "basic":
+        if self.mode == "basic-lstm":
             model.add(keras.layers.LSTM(self.lstm_output_size, return_sequences=False, bias_initializer=keras.initializers.Ones()))
-        elif self.mode == "two-layers":
+        elif self.mode == "two-lstm":
             model.add(keras.layers.LSTM(self.lstm_output_size, return_sequences=True, bias_initializer=keras.initializers.Ones()))
             model.add(keras.layers.LSTM(self.lstm_output_size, return_sequences=False, bias_initializer=keras.initializers.Ones()))
-        elif self.mode == "bi-dir":
+        elif self.mode == "bi-lstm":
             model.add(keras.layers.Bidirectional(
                 keras.layers.LSTM(self.lstm_output_size, bias_initializer=keras.initializers.Ones()),merge_mode="sum")
             )
