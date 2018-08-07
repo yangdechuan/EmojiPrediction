@@ -21,7 +21,7 @@ class LSTMModel(object):
         """
         self.mode = mode
 
-        self.vocab_size = 10000
+        self.vocab_size = 58205
         self.embedding_dim = 300
         self.maxlen = 20
         self.lstm_output_size = 300
