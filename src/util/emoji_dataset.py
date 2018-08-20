@@ -47,6 +47,8 @@ class EmojiDataset(object):
             maxlen: maximum length of all sequences
         Returns:
             Tuple of Numpy arrays: (x_train, y_train), (x_test, y_test), (x_valid, y_valid)
+            x_train: shape=(data_size, maxlen)  dtype=int32
+            y_train: shape=(data_size, num_class)  dtype=int32
         """
         train_texts, train_labels = load_json_data(self.train_filename)
         test_texts, test_labels = load_json_data(self.test_filename)
@@ -87,11 +89,17 @@ class EmojiDataset(object):
         self.test_data, self.test_labels = test_data, test_labels
         self.valid_data, self.valid_labels = valid_data, valid_labels
 
-        return (np.array(self.train_data), np.array(self.train_labels)), \
-               (np.array(self.test_data), np.array(self.test_labels)), \
-               (np.array(self.valid_data), np.array(self.valid_labels))
+        return (np.array(self.train_data), self.train_labels.astype("int32")), \
+               (np.array(self.test_data), self.test_labels.astype("int32")), \
+               (np.array(self.valid_data), self.valid_labels.astype("int32"))
 
     def get_wordindex(self):
+        """Get word index dict.
+
+        Returns:
+            A dict with word as key, index as value.
+            e.g. {'the': 1, 'user': 2, ...}
+        """
         return self.word_index
 
 
