@@ -5,9 +5,8 @@ import time
 
 import numpy as np
 import gensim
-# import tensorflow as tf
-# from tensorflow import keras
-import keras
+import tensorflow as tf
+from tensorflow import keras
 
 from src.util.emoji_dataset import EmojiDataset
 from src.util.util import ClassificationMacroF1
