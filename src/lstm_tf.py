@@ -1,10 +1,12 @@
 import os
+import time
 import logging
 
 import numpy as np
 import gensim
 import tensorflow as tf
-from tensorflow.contrib.rnn import BasicLSTMCell, MultiRNNCell
+# from tensorflow.contrib.rnn import BasicLSTMCell
+from tensorflow.nn.rnn_cell import BasicLSTMCell
 
 from src.util.emoji_dataset import EmojiDataset
 
@@ -72,12 +74,50 @@ class LSTMModel(object):
         """Build the lstm model."""
         logging.info("Building model...")
 
-        with tf.device("/cpu:0"):
-            sequences = tf.placeholder("int32", shape=[None, self.maxlen])
-            embedding = tf.get_variable("embedding", dtype="float32", initializer=self.emb_matrix)
-            inputs = tf.nn.embedding_lookup(embedding, sequences)
-        def make_cell():
-            cell = BasicLSTMCell(self.lstm_output_size)
-            return cell
-        cells = MultiRNNCell([make_cell() for _ in range(self.maxlen)], state_is_tuple=True)
-        output, state = cells(inputs)
+        # with tf.device("/cpu:0"):
+        sequences = tf.placeholder("int32", shape=[None, self.maxlen])
+        y_ = tf.placeholder(tf.float64, shape=[None, self.num_classes])
+        # [batch_size, maxlen, embedding_dim]
+        embedding = tf.get_variable("embedding", dtype=tf.float64, initializer=self.emb_matrix)
+
+        inputs = tf.nn.embedding_lookup(embedding, sequences)
+        cell = BasicLSTMCell(self.lstm_output_size)
+        # initial_state = rnn_cell.zero_state(batch_size, dtype=tf.float32)
+        outputs, state = tf.nn.dynamic_rnn(cell, inputs, dtype=tf.float64)
+        # w = tf.Variable(initial_value=tf.truncated_normal([self.lstm_output_size, self.num_classes], stddev=0.1),
+        #                 dtype=tf.float32,
+        #                 name="W")
+        # b = tf.Variable(tf.constant(0.1, shape=[self.num_classes]),
+        #                 dtype=tf.float32,
+        #                 name="B")
+        w = tf.get_variable("w", shape=[self.lstm_output_size, self.num_classes], dtype=tf.float64)
+        b = tf.get_variable("b", shape=[self.num_classes], dtype=tf.float64)
+
+        act = tf.matmul(outputs[:, -1, :], w) + b
+        y = tf.nn.softmax(act)
+        cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), axis=[1]))
+        train_step = tf.train.AdagradOptimizer(0.1).minimize(cross_entropy)
+
+        sess = tf.Session()
+        sess.run(tf.global_variables_initializer())
+
+        train_size = self.x_train.shape[0]
+        logging.info("Training model...")
+        s = time.time()
+        for i in range(10):
+            print("epoch {}".format(i))
+            j = 0
+            while j + 64 < train_size:
+                batch_xs = self.x_train[j: j + 64]
+                batch_ys = self.y_train[j: j + 64]
+                sess.run(train_step, feed_dict={sequences: batch_xs, y_: batch_ys})
+            correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+            accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float64))
+            print(accuracy.eval({sequences: self.x_test, y_: self.y_test}))
+        t = time.time()
+        logging.info("Train model use {}s".format(t - s))
+
+
+
+
+

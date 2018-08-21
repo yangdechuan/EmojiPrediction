@@ -1,5 +1,6 @@
 from src.svm import SVMModel
-from src.lstm import LSTMModel
+# from src.lstm import LSTMModel
+from src.lstm_tf import LSTMModel
 
 def svm():
     model = SVMModel()
@@ -12,5 +13,5 @@ def lstm(mode=None):
     model = LSTMModel(mode=mode)
     model.load_data()
     model.build_model()
-    model.train_model()
-    model.save_model()
+    # model.train_model()
+    # model.save_model()
