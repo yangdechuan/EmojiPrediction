@@ -53,6 +53,8 @@ class LSTMModel(object):
         (self.x_train, self.y_train), (self.x_test, self.y_test), (self.x_valid, self.y_valid) \
             = emoji_dataset.load_data(num_words=self.vocab_size, maxlen=self.maxlen, x_padding=True, y_categorial=True)
         logging.info("Finish loading data.")
+        logging.info("train data size: {}".format(self.x_train.shape[0]))
+        logging.info("test data size: {}".format(self.x_test.shape[0]))
 
         word_index = emoji_dataset.get_wordindex()
 
@@ -75,12 +77,12 @@ class LSTMModel(object):
         logging.info("Building model...")
 
         # with tf.device("/cpu:0"):
-        sequences = tf.placeholder("int32", shape=[None, self.maxlen])
+        X = tf.placeholder("int32", shape=[None, self.maxlen])
         y_ = tf.placeholder(tf.float64, shape=[None, self.num_classes])
         # [batch_size, maxlen, embedding_dim]
         embedding = tf.get_variable("embedding", dtype=tf.float64, initializer=self.emb_matrix)
 
-        inputs = tf.nn.embedding_lookup(embedding, sequences)
+        inputs = tf.nn.embedding_lookup(embedding, X)
         cell = BasicLSTMCell(self.lstm_output_size)
         # initial_state = rnn_cell.zero_state(batch_size, dtype=tf.float32)
         outputs, state = tf.nn.dynamic_rnn(cell, inputs, dtype=tf.float64)
@@ -110,10 +112,11 @@ class LSTMModel(object):
             while j + 64 < train_size:
                 batch_xs = self.x_train[j: j + 64]
                 batch_ys = self.y_train[j: j + 64]
-                sess.run(train_step, feed_dict={sequences: batch_xs, y_: batch_ys})
+                sess.run(train_step, feed_dict={X: batch_xs, y_: batch_ys})
+                j += 64
             correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float64))
-            print(accuracy.eval({sequences: self.x_test, y_: self.y_test}))
+            print(accuracy.eval({X: self.x_test, y_: self.y_test}))
         t = time.time()
         logging.info("Train model use {}s".format(t - s))
 
