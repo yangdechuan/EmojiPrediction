@@ -76,7 +76,6 @@ class LSTMModel(object):
         """Build the lstm model."""
         logging.info("Building model...")
 
-        # with tf.device("/cpu:0"):
         X = tf.placeholder("int32", shape=[None, self.maxlen])
         y_ = tf.placeholder(tf.float64, shape=[None, self.num_classes])
         # [batch_size, maxlen, embedding_dim]
@@ -116,7 +115,9 @@ class LSTMModel(object):
                 j += 64
             correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float64))
-            print(accuracy.eval({X: self.x_test, y_: self.y_test}))
+            acc = sess.run(accuracy, feed_dict={X: self.x_test, y_: self.y_test})
+            print(acc)
+            logging.info("Accuracy: {}".format(acc))
         t = time.time()
         logging.info("Train model use {}s".format(t - s))
 
