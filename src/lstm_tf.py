@@ -123,11 +123,12 @@ class LSTMModel(object):
         writer.add_graph(sess.graph)
 
         logging.info("Training model...")
+        data_size = self.x_train.shape[0]
         s = time.time()
         for i in range(10):
             print("epoch {}".format(i))
             j = 0
-            while j + 100 < self.x_train.shape[0]:
+            while j + 100 < data_size:
                 batch_xs = self.x_train[j: j + 100]
                 batch_ys = self.y_train[j: j + 100]
                 sess.run(train_step, feed_dict={X: batch_xs, y_: batch_ys})
@@ -136,8 +137,8 @@ class LSTMModel(object):
                 if j % 100 == 0:
                     summ_fc_tmp = sess.run(summ_fc, feed_dict={X: batch_xs, y_: batch_ys})
                     summ_acc_tmp = sess.run(summ_acc, feed_dict={X: self.x_test, y_: self.y_test})
-                    writer.add_summary(summ_fc_tmp)
-                    writer.add_summary(summ_acc_tmp)
+                    writer.add_summary(summ_fc_tmp, global_step=j + i * data_size)
+                    writer.add_summary(summ_acc_tmp, global_step=j + i * data_size)
             
             acc = sess.run(accuracy, feed_dict={X: self.x_test, y_: self.y_test})
             logging.info("Accuracy: {}".format(acc))
