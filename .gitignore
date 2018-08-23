@@ -107,3 +107,6 @@ venv.bak/
 .idea
 
 *.w2v
+
+# tensorboard log dir
+tmp
