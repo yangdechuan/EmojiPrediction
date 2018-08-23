@@ -76,47 +76,70 @@ class LSTMModel(object):
         """Build the lstm model."""
         logging.info("Building model...")
 
-        X = tf.placeholder("int32", shape=[None, self.maxlen])
-        y_ = tf.placeholder(tf.float64, shape=[None, self.num_classes])
-        # [batch_size, maxlen, embedding_dim]
-        embedding = tf.get_variable("embedding", dtype=tf.float64, initializer=self.emb_matrix)
+        X = tf.placeholder("int32", shape=[None, self.maxlen], name="x")
+        y_ = tf.placeholder(tf.float64, shape=[None, self.num_classes], name="y_true")
+        with tf.name_scope("embedding"):
+            # [batch_size, maxlen, embedding_dim]
+            embedding = tf.get_variable("embedding", dtype=tf.float64, initializer=self.emb_matrix)
+        
+        with tf.name_scope("lstm"):
+            inputs = tf.nn.embedding_lookup(embedding, X, name="inputs")
+            cell = BasicLSTMCell(self.lstm_output_size, name="cell")
+            # initial_state = rnn_cell.zero_state(batch_size, dtype=tf.float32)
+            outputs, state = tf.nn.dynamic_rnn(cell, inputs, dtype=tf.float64)
+            # w = tf.Variable(initial_value=tf.truncated_normal([self.lstm_output_size, self.num_classes], stddev=0.1),
+            #                 dtype=tf.float32,
+            #                 name="W")
+            # b = tf.Variable(tf.constant(0.1, shape=[self.num_classes]),
+            #                 dtype=tf.float32,
+            #                 name="B")
+        
+        with tf.name_scope("fc"):
+            w = tf.get_variable("w", shape=[self.lstm_output_size, self.num_classes], dtype=tf.float64)
+            b = tf.get_variable("b", shape=[self.num_classes], dtype=tf.float64)
+            act = tf.matmul(outputs[:, -1, :], w) + b
+            y = tf.nn.softmax(act)
+            tf.summary.histogram("w", w)
+            tf.summary.histogram("b", b)
 
-        inputs = tf.nn.embedding_lookup(embedding, X)
-        cell = BasicLSTMCell(self.lstm_output_size)
-        # initial_state = rnn_cell.zero_state(batch_size, dtype=tf.float32)
-        outputs, state = tf.nn.dynamic_rnn(cell, inputs, dtype=tf.float64)
-        # w = tf.Variable(initial_value=tf.truncated_normal([self.lstm_output_size, self.num_classes], stddev=0.1),
-        #                 dtype=tf.float32,
-        #                 name="W")
-        # b = tf.Variable(tf.constant(0.1, shape=[self.num_classes]),
-        #                 dtype=tf.float32,
-        #                 name="B")
-        w = tf.get_variable("w", shape=[self.lstm_output_size, self.num_classes], dtype=tf.float64)
-        b = tf.get_variable("b", shape=[self.num_classes], dtype=tf.float64)
-
-        act = tf.matmul(outputs[:, -1, :], w) + b
-        y = tf.nn.softmax(act)
         cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), axis=[1]))
+
+        # Define train step.
         train_step = tf.train.AdagradOptimizer(0.1).minimize(cross_entropy)
+
+        # Define accuracy.
+        with tf.name_scope("metrics"):
+            correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+            accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float64))
+            tf.summary.scalar("accuracy", accuracy)
 
         sess = tf.Session()
         sess.run(tf.global_variables_initializer())
 
-        train_size = self.x_train.shape[0]
+        summ_acc = tf.summary.merge_all(scope="metrics")
+        summ_fc = tf.summary.merge_all(scope="fc")
+
+        writer = tf.summary.FileWriter("tmp")
+        writer.add_graph(sess.graph)
+
         logging.info("Training model...")
         s = time.time()
         for i in range(10):
             print("epoch {}".format(i))
             j = 0
-            while j + 64 < train_size:
-                batch_xs = self.x_train[j: j + 64]
-                batch_ys = self.y_train[j: j + 64]
+            while j + 100 < self.x_train.shape[0]:
+                batch_xs = self.x_train[j: j + 100]
+                batch_ys = self.y_train[j: j + 100]
                 sess.run(train_step, feed_dict={X: batch_xs, y_: batch_ys})
-                j += 64
-            correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
-            accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float64))
+                j += 100
+
+                if j % 100 == 0:
+                    summ_fc_tmp = sess.run(summ_fc, feed_dict={X: batch_xs, y_: batch_ys})
+                    summ_acc_tmp = sess.run(summ_acc, feed_dict={X: self.x_test, y_: self.y_test})
+                    writer.add_summary(summ_fc_tmp)
+                    writer.add_summary(summ_acc_tmp)
+            
             acc = sess.run(accuracy, feed_dict={X: self.x_test, y_: self.y_test})
-            print(acc)
             logging.info("Accuracy: {}".format(acc))
         t = time.time()
         logging.info("Train model use {}s".format(t - s))
