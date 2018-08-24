@@ -113,7 +113,7 @@ class LSTMModel(object):
         sess = tf.Session()
         sess.run(tf.global_variables_initializer())
 
-        summ_acc = tf.summary.merge_all(scope="metrics")
+        summ_acc = tf.summary.merge_all(scope="train")
         summ_fc = tf.summary.merge_all(scope="fc")
 
         writer = tf.summary.FileWriter("tmp")
