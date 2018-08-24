@@ -1,6 +1,6 @@
 from src.svm import SVMModel
 # from src.lstm import LSTMModel
-from src.lstm_tf import LSTMModel
+from src.lstm_tf2 import LSTMModel
 
 def svm():
     model = SVMModel()
