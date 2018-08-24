@@ -6,7 +6,7 @@ import numpy as np
 import gensim
 import tensorflow as tf
 # from tensorflow.contrib.rnn import BasicLSTMCell
-from tensorflow.nn.rnn_cell import BasicLSTMCell
+from tensorflow.nn.rnn_cell import BasicLSTMCell, MultiRNNCell
 
 from src.util.emoji_dataset import EmojiDataset
 
@@ -27,6 +27,8 @@ class LSTMModel(object):
         self.maxlen = 20
         self.lstm_output_size = 300
         self.num_classes = 20
+
+        self.batch_size = 100
 
         # filepath
         self.model_file = os.path.join("output", "models", "mymodel")
@@ -79,17 +81,33 @@ class LSTMModel(object):
         X = tf.placeholder("int32", shape=[None, self.maxlen], name="x")
         y_ = tf.placeholder(tf.float64, shape=[None, self.num_classes], name="y_true")
         with tf.name_scope("embedding"):
-            # [batch_size, maxlen, embedding_dim]
             embedding = tf.get_variable("embedding", dtype=tf.float64, initializer=self.emb_matrix)
         
         with tf.name_scope("lstm"):
+            # inputs: [batch_size, maxlen, embedding_dim]
+            # outputs: [batch_size, maxlen, h1_inputs]
             inputs = tf.nn.embedding_lookup(embedding, X, name="inputs")
-            cell = BasicLSTMCell(self.lstm_output_size, name="cell")
-            # initial_state = rnn_cell.zero_state(batch_size, dtype=tf.float32)
-            outputs, state = tf.nn.dynamic_rnn(cell, inputs, dtype=tf.float64)
+            if self.mode == "basic-lstm":
+                cell = BasicLSTMCell(self.lstm_output_size, name="cell")
+                outputs, state = tf.nn.dynamic_rnn(cell, inputs, dtype=tf.float64)
+            elif self.mode == "bi-lstm":
+                cell_fw = BasicLSTMCell(self.lstm_output_size, name="cell")
+                cell_bw = BasicLSTMCell(self.lstm_output_size, name="cell")
+                # (output_fw, output_bw), output_states = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, inputs, dtype=tf.float64)
+                # outputs = tf.concat((output_fw, output_bw), 2)
+                (outputs, output_state_fw, output_state_bw) = tf.nn.static_bidirectional_rnn(cell_fw, cell_bw, inputs, dtype=tf.float32)
+            elif self.model == "two-lstm":
+                cells = [BasicLSTMCell(n) for n in [300, 150]]
+                stacked_rnn_cell = MultiRNNCell(cells)
+                outputs, state = tf.nn.dynamic_rnn(stacked_rnn_cell, inputs, dtype=tf.float64)
         
         with tf.name_scope("fc"):
-            w = tf.get_variable("w", shape=[self.lstm_output_size, self.num_classes], dtype=tf.float64)
+            if self.mode == "basic_lstm":
+                w = tf.get_variable("w", shape=[self.lstm_output_size, self.num_classes], dtype=tf.float64)
+            elif self.mode == "bi-lstm":
+                w = tf.get_variable("w", shape=[600, self.num_classes], dtype=tf.float64)
+            elif self.model == "two-lstm":
+                w = tf.get_variable("w", shape=[150, self.num_classes], dtype=tf.float64)
             b = tf.get_variable("b", shape=[self.num_classes], dtype=tf.float64)
             act = tf.matmul(outputs[:, -1, :], w) + b
             y = tf.nn.softmax(act)
