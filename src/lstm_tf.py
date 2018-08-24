@@ -87,12 +87,6 @@ class LSTMModel(object):
             cell = BasicLSTMCell(self.lstm_output_size, name="cell")
             # initial_state = rnn_cell.zero_state(batch_size, dtype=tf.float32)
             outputs, state = tf.nn.dynamic_rnn(cell, inputs, dtype=tf.float64)
-            # w = tf.Variable(initial_value=tf.truncated_normal([self.lstm_output_size, self.num_classes], stddev=0.1),
-            #                 dtype=tf.float32,
-            #                 name="W")
-            # b = tf.Variable(tf.constant(0.1, shape=[self.num_classes]),
-            #                 dtype=tf.float32,
-            #                 name="B")
         
         with tf.name_scope("fc"):
             w = tf.get_variable("w", shape=[self.lstm_output_size, self.num_classes], dtype=tf.float64)
@@ -102,16 +96,19 @@ class LSTMModel(object):
             tf.summary.histogram("w", w)
             tf.summary.histogram("b", b)
 
-        cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), axis=[1]))
+        with tf.name_scope("train"):
+            cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), axis=[1]))
 
-        # Define train step.
-        train_step = tf.train.AdagradOptimizer(0.1).minimize(cross_entropy)
+            # Define train step.
+            train_step = tf.train.AdagradOptimizer(0.1).minimize(cross_entropy)
 
-        # Define accuracy.
-        with tf.name_scope("metrics"):
+            # Define accuracy.
             correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float64))
+
+            tf.summary.scalar("cross_entropy", cross_entropy)
             tf.summary.scalar("accuracy", accuracy)
+            
 
         sess = tf.Session()
         sess.run(tf.global_variables_initializer())
@@ -134,7 +131,7 @@ class LSTMModel(object):
                 sess.run(train_step, feed_dict={X: batch_xs, y_: batch_ys})
                 j += 100
 
-                if j % 1000 == 0:
+                if j % 10000 == 0:
                     summ_fc_tmp = sess.run(summ_fc, feed_dict={X: batch_xs, y_: batch_ys})
                     summ_acc_tmp = sess.run(summ_acc, feed_dict={X: self.x_test, y_: self.y_test})
                     writer.add_summary(summ_fc_tmp, global_step=j + i * data_size)
