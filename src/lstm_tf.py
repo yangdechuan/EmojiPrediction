@@ -134,7 +134,7 @@ class LSTMModel(object):
                 sess.run(train_step, feed_dict={X: batch_xs, y_: batch_ys})
                 j += 100
 
-                if j % 100 == 0:
+                if j % 1000 == 0:
                     summ_fc_tmp = sess.run(summ_fc, feed_dict={X: batch_xs, y_: batch_ys})
                     summ_acc_tmp = sess.run(summ_acc, feed_dict={X: self.x_test, y_: self.y_test})
                     writer.add_summary(summ_fc_tmp, global_step=j + i * data_size)
